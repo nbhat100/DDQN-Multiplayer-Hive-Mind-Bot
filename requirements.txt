@@ -1,0 +1,10 @@
+pyautogui
+matplotlib
+tensorflow
+pytesseract
+numpy
+os
+shutil
+random
+opencv-python
+time
