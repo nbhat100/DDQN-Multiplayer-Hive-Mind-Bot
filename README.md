@@ -1,5 +1,5 @@
 # Pacman-Bot
-Plays pacman  
+Plays pacman on this website (Run this website while code is running and minimize the ide): http://www.free80sarcade.com/pacman.php - automatic!  
 **Architecture:**  
 * **DDQN_Model.py** is a model that creates 2 from the *class ConvNet* in **Convolutional_Neural_Network.py**  
 * **Get_environment** gets the environemnt by taking a screenshot into a numpy array.  
