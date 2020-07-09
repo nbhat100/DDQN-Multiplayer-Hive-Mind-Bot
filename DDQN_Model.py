@@ -37,7 +37,7 @@ class ddqnTrainer():
         ddqnModel.__init__(self, input_shape, action_space, './models')
         if os.path.exists(os.path.dirname(self.model_path)):
             print("deleting folder")
-            #shutil.rmtree(os.path.dirname(self.model_path), ignore_errors=True)
+            #shutil.rmtree(os.path.dirname(self.model_path), ignore_errors=True) # This code overwrites and wipes out the entire project deleting it. Can someone tell me how to fix it?
         #os.makedirs(os.path.dirname(self.model_path))
         self.ddqn_target = ConvNet(self.input_shape, action_space).model
         self.reset_target()
