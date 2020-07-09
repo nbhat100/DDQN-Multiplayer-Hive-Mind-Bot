@@ -1,5 +1,5 @@
 # Pacman-Bot
-Plays pacman
+Plays pacman  
 **Architecture:**  
 * **DDQN_Model.py** is a model that creates 2 from the *class ConvNet* in **Convolutional_Neural_Network.py**  
 * **Get_environment** gets the environemnt by taking a screenshot into a numpy array.  
