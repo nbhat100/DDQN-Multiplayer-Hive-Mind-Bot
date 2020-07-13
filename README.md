@@ -1,5 +1,6 @@
-# Pacman-Bot
-Plays pacman on this website (Run this website while code is running and minimize the ide): http://www.free80sarcade.com/pacman.php  
+# DDQN Hive Mind Bot
+Goal: plays multiplayer games with alts to efficiently clear enemies
+Current status: working on making it play Diep.io
 **Architecture:**  
 * **DDQN_Model.py** is a model that creates 2 from the *class ConvNet* in **Convolutional_Neural_Network.py**  
 * **Get_environment** gets the environemnt by taking a screenshot into a numpy array.  
