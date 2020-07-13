@@ -6,4 +6,4 @@ Plays pacman on this website (Run this website while code is running and minimiz
 * **Gather_training_points** takes a screenshot of the reward and reads it using OCR.  
 * **Main_Pacman_Bot.py** intergrates everything together  
 
-***Note:*** *In DDQN_Model, there is some code that causes the entire folder to be deleted in lines 40-50* 
+***Note:*** *Pyautogui doesnt seem to interact with the js game but works with a flash game. Need to find better thing to train it on. Probably gonna directly train this on Diep.io* 
