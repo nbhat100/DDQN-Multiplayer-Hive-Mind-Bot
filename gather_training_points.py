@@ -18,8 +18,8 @@ class readReward():
 
     def mainLoop(self):
         fetchTrain = GetEnv(inDim=(621, 656, 684, 793), outDim=(109, 35))
-        sleep(5)
-        image = fetchTrain.takeImage(100, "inverse")
-        return self.readPoints(image[0])
+        # sleep(5)
+        image = fetchTrain.takeImage(1, "inverse")
+        # print(len(image))
         cv2.imwrite("points.png", image)
         return self.readPoints("points.png")
