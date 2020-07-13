@@ -10,7 +10,7 @@ OutFrameSize = 80
 InFrameDim = (556, 838, 449, 786)
 InputShape = (Frames, InFrameDim[1]-InFrameDim[0], InFrameDim[3] - InFrameDim[2])
 TotalStepLimit = 5000000
-ActionSpace = 5
+ActionSpace = ("w", "a", "s", "d", "space", "e", "q")
 
 
 class Environment:
@@ -28,24 +28,13 @@ class Environment:
 
     def step(self, action):
         print(f"action: {action}")
-        if action == 0:
-            pyautogui.press('left')
-        elif action == 1:
-            pyautogui.press('up')
-        elif action == 2:
-            pyautogui.press('down')
-        elif action == 3:
-            pyautogui.press('right')
-        elif action == 4:
-            pyautogui.press('enter')
-        else:
-            sleep(1 / 28)
+        pyautogui.press(ActionSpace[action])
 
 
 def main():
     run = 0
     total_step = 0
-    game_model = ddqnTrainer(InputShape, ActionSpace)
+    game_model = ddqnTrainer(InputShape, len(ActionSpace))
     prev_score = 0
     while True:
         run += 1
