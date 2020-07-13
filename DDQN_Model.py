@@ -1,6 +1,5 @@
 from convolutional_neural_net import ConvNet
 import os
-import shutil
 import random
 import numpy as np
 
@@ -18,7 +17,7 @@ ModelPersistenceUpdateFrequency = 10000
 TargetUpdateFrequency = 40000
 
 
-class ddqnModel():
+class ddqnModel:
 
     def __init__(self, input_shape, action_space, model_path):
         self.input_shape = input_shape
@@ -32,13 +31,9 @@ class ddqnModel():
         self.ddqn.save_weights(self.model_path)
 
 
-class ddqnTrainer():
+class ddqnTrainer(ddqnModel):
     def __init__(self, input_shape, action_space):
-        ddqnModel.__init__(self, input_shape, action_space, './models')
-        if os.path.exists(os.path.dirname(self.model_path)):
-            print("deleting folder")
-            #shutil.rmtree(os.path.dirname(self.model_path), ignore_errors=True) # This code overwrites and wipes out the entire project deleting it. Can someone tell me how to fix it?
-        #os.makedirs(os.path.dirname(self.model_path))
+        ddqnModel.__init__(self, input_shape, action_space, '.')
         self.ddqn_target = ConvNet(self.input_shape, action_space).model
         self.reset_target()
         self.epsilon = ExplorationMax
@@ -53,12 +48,11 @@ class ddqnTrainer():
         q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
         return np.argmax(q_values[0])
 
-    def remember(self, current_state, action, reward, next_state, terminal):
+    def remember(self, current_state, action, reward, next_state):
         self.memory.append({"current_state": current_state,
                             "action": action,
                             "reward": reward,
-                            "next_state": next_state,
-                            "terminal": terminal})
+                            "next_state": next_state})
         if len(self.memory) > MemorySize:
             self.memory.pop(0)
 
@@ -87,15 +81,7 @@ class ddqnTrainer():
         accuracy = fitModel.history["acc"][0]
         return loss, accuracy, sum(max_q_values)/len(max_q_values)
 
-        fit = self.ddqn.fit(np.asarray(current_states).squeeze(),
-                            np.asarray(q_values).squeeze(),
-                            batch_size=BATCH_SIZE,
-                            verbose=0)
-        loss = fit.history["loss"][0]
-        accuracy = fit.history["acc"][0]
-        return loss, accuracy, mean(max_q_values)
-
-    def _update_epsilon(self):
+    def update_epsilon(self):
         self.epsilon -= ExplorationDecay
         self.epsilon = max(ExplorationMin, self.epsilon)
 
