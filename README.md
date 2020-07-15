@@ -7,4 +7,4 @@ Current status: working on making it play Diep.io
 * **Gather_training_points** takes a screenshot of the reward and reads it using OCR.  
 * **Main_Pacman_Bot.py** intergrates everything together  
 
-***Note:*** *Pyautogui doesnt seem to interact with the js game but works with a flash game. Need to find better thing to train it on. Probably gonna directly train this on Diep.io* 
+***Note:*** *Mouse and key intergration successful. Need to test model, and add Server side reward modeling* 
