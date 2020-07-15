@@ -33,7 +33,7 @@ class ddqnModel:
 
 class ddqnTrainer(ddqnModel):
     def __init__(self, input_shape, action_space):
-        ddqnModel.__init__(self, input_shape, action_space, '.')
+        ddqnModel.__init__(self, input_shape, action_space, './models')
         self.ddqn_target = ConvNet(self.input_shape, action_space).model
         self.reset_target()
         self.epsilon = ExplorationMax
@@ -44,9 +44,9 @@ class ddqnTrainer(ddqnModel):
 
     def move(self, state):
         if np.random.rand() < self.epsilon or len(self.memory) < StartingReplaySize:
-            return random.randrange(self.action_space)
+            return random.randrange(self.action_space[0]), random.randrange(self.action_space[1])
         q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
-        return np.argmax(q_values[0])
+        return np.argmax(q_values[0]), np.argmax(q_values[1])
 
     def remember(self, current_state, action, reward, next_state):
         self.memory.append({"current_state": current_state,
