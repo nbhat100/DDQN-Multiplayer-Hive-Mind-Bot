@@ -4,17 +4,17 @@ import random
 import numpy as np
 
 # Hyper Parameters
-StartingReplaySize = 50000
+StartingReplaySize = 0
 ExplorationMax = 1
 MemorySize = 900000
 TrainingFrequency = 4
 BatchSize = 32
 Gamma = 0.99
 ExplorationMin = 0.1
-ExplorationSteps = 850000
+ExplorationSteps = 85000
 ExplorationDecay = (ExplorationMax - ExplorationMin)/ExplorationSteps
-ModelPersistenceUpdateFrequency = 10000
-TargetUpdateFrequency = 40000
+ModelPersistenceUpdateFrequency = 10
+TargetUpdateFrequency = 40
 
 
 class ddqnModel:
@@ -43,6 +43,7 @@ class ddqnTrainer(ddqnModel):
         self.ddqn_target.set_weights(self.ddqn.get_weights())
 
     def move(self, state):
+        print(f"memory: {len(self.memory)}")
         if np.random.rand() < self.epsilon or len(self.memory) < StartingReplaySize:
             return random.randrange(self.action_space[0]), random.randrange(self.action_space[1])
         q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
@@ -88,10 +89,13 @@ class ddqnTrainer(ddqnModel):
     def step_update(self, totalStep):
         if len(self.memory) < StartingReplaySize:
             return
+        if totalStep % TrainingFrequency == 0:
+            loss, accuracy, average_max_q = self.train()
+            print(f"loss: {loss}, accuracy: {accuracy}, average_max_q: {average_max_q}")
         self.update_epsilon()
-        if len(self.memory) % ModelPersistenceUpdateFrequency == 0:
+        if totalStep % ModelPersistenceUpdateFrequency == 0:
             self.save_model()
-        if len(self.memory) % TargetUpdateFrequency == 0:
+        if totalStep % TargetUpdateFrequency == 0:
             self.reset_target()
             print('{{"metric": "epsilon", "value": {}}}'.format(self.epsilon))
             print('{{"metric": "total_step", "value": {}}}'.format(totalStep))
