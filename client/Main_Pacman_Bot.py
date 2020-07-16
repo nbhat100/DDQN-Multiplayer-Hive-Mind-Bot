@@ -11,8 +11,8 @@ OutFrameSize = 80
 InFrameDim = (556, 838, 449, 786)
 InputShape = (Frames, InFrameDim[1]-InFrameDim[0], InFrameDim[3] - InFrameDim[2])
 TotalStepLimit = 5000000
-ActionSpace = ("w", "a", "s", "d", "space")
-MouseActionSpace = [[868, 360], [860, 398], [839, 431], [806, 452], [768, 460], [729, 452], [697, 430], [675, 398], [668, 360], [675, 321], [697, 289], [729, 267], [768, 260], [806, 267], [838, 289], [860, 321]]
+ActionSpace = ("w", "a", "s", "d", "enter", "e")
+MouseActionSpace = [[1061, 581], [1053, 619], [1031, 651], [999, 673], [961, 681], [922, 673], [890, 651], [868, 619], [861, 581], [868, 542], [890, 510], [922, 488], [961, 481], [999, 488], [1031, 510], [1053, 542]]
 ScoreInDim = (905, 921, 875, 1045)
 ScoreOutDim = (170, 16)
 
@@ -37,6 +37,7 @@ class Environment:
 
     def step(self, action, prev_action):
         print(f"action: {action}")
+        print(f"Mouse Action: {MouseActionSpace[action[1]]}")
         pydirectinput.keyUp(ActionSpace[prev_action[0]])
         pydirectinput.keyDown(ActionSpace[action[0]])
         pydirectinput.moveTo(MouseActionSpace[action[1]][0], MouseActionSpace[action[1]][1])
@@ -63,9 +64,9 @@ def main():
             env.step(action, prev_action)
             prev_action = action
             next_state = env.getEnvironment()
-            current_score = score.mainLoop(ScoreInDim, ScoreOutDim)
+            current_score = score.mainLoop((965, 982, 895, 1025), (130, 17))
             reward = current_score - prev_score
-            print(reward)
+            print(f"current_score: {current_score}")
             prev_score = current_score
             game_model.remember(current_state, action, reward, next_state)
             game_model.step_update(total_step)
