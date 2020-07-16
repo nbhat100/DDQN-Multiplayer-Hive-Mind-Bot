@@ -10,16 +10,18 @@ class readReward():
 
     def readPoints(self, inImg):
         img = cv2.imread(inImg)
-        string = str(pytesseract.image_to_string)
-        if string.isdigit():
-            return pytesseract.image_to_string(img)
-        else:
+        string = str(pytesseract.image_to_string(img))
+        if '1234567890' not in string:
             return 0
+        else:
+            integer = int(''.join(c for c in string if c.isdigit()))
+            return integer
 
     def mainLoop(self, inDim, outDim):
         fetchTrain = GetEnv(inDim=inDim, outDim=outDim)
         # sleep(5)
-        image = fetchTrain.takeImage(1, "Inverse")
+        image = fetchTrain.takeImage(1, "inverse")
         # print(len(image))
         cv2.imwrite("points.png", image)
         return self.readPoints("points.png")
+
