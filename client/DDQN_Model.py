@@ -2,16 +2,17 @@ from convolutional_neural_net import ConvNet
 import os
 import random
 import numpy as np
+import csv
 
 # Hyper Parameters
-StartingReplaySize = 0
+StartingReplaySize = 500
 ExplorationMax = 1
 MemorySize = 900000
 TrainingFrequency = 4
 BatchSize = 32
 Gamma = 0.99
 ExplorationMin = 0.1
-ExplorationSteps = 85000
+ExplorationSteps = 8500
 ExplorationDecay = (ExplorationMax - ExplorationMin)/ExplorationSteps
 ModelPersistenceUpdateFrequency = 10
 TargetUpdateFrequency = 40
@@ -33,7 +34,7 @@ class ddqnModel:
 
 class ddqnTrainer(ddqnModel):
     def __init__(self, input_shape, action_space):
-        ddqnModel.__init__(self, input_shape, action_space, './models')
+        ddqnModel.__init__(self, input_shape, action_space, './')
         self.ddqn_target = ConvNet(self.input_shape, action_space).model
         self.reset_target()
         self.epsilon = ExplorationMax
@@ -46,7 +47,7 @@ class ddqnTrainer(ddqnModel):
         print(f"memory: {len(self.memory)}")
         if np.random.rand() < self.epsilon or len(self.memory) < StartingReplaySize:
             return random.randrange(self.action_space[0]), random.randrange(self.action_space[1])
-        q_values = self.ddqn.predict(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), batch_size=1)
+        q_values = self.ddqn.predict(np.transpose(np.expand_dims(np.asarray(state).astype(np.float64), axis=0), [0, 2, 3, 1]), batch_size=1)
         return np.argmax(q_values[0]), np.argmax(q_values[1])
 
     def remember(self, current_state, action, reward, next_state):
@@ -65,22 +66,34 @@ class ddqnTrainer(ddqnModel):
         q_values = []
         max_q_values = []
         for entry in batch:
-            current_state = np.expand_dims(np.asarray(entry["current_state"]).astype(np.float64), axis=0)
+            current_state = np.transpose(np.expand_dims(np.asarray(entry["current_state"]).astype(np.float64), axis=0), [0, 2, 3, 1])
             current_states.append(current_state)
             next_state = np.expand_dims(np.asarray(entry["next_state"]).astype(np.float64), axis=0)
-            next_state_prediction = self.ddqn_target.predict(next_state).ravel()
-            next_q_value = np.max(next_state_prediction)
-            q = list(self.ddqn.predict(current_state)[0])
-            if entry["terminal"]:
-                q[entry["action"]] = entry["reward"]
-            else:
-                q[entry["action"]] = entry["reward"] + Gamma * next_q_value
+            next_state = np.transpose(next_state, [0, 2, 3, 1])
+            # print(next_state.shape)
+            next_state_prediction = self.ddqn_target.predict(next_state)
+            # print(next_state_prediction)
+            next_state_prediction = [next_state_prediction[0].ravel(), next_state_prediction[1].ravel()]
+            next_q_value = [np.max(next_state_prediction[0]), np.max(next_state_prediction[1])]
+            q = [self.ddqn.predict(current_state)[0][0], self.ddqn.predict(current_state)[1][0]]
+            for i in range(len(entry["action"])):
+                # print(len(entry["action"]))
+                q[i][entry["action"][i]] = entry["reward"] + Gamma * next_q_value[i]
             q_values.append(q)
-            max_q_values.append(np.max(q))
-        fitModel = self.ddqn.fit(np.asarray(current_states).squeeze(), np.asarray(q_values).squeeze(), batch_size=BatchSize, verbose=0)
+            max_q = [np.max(q[i]) for i in range(len(q))]
+            max_q_values.append(max_q)
+        max_q_values = np.asarray(max_q_values).flatten()
+        q_values = np.asarray(q_values).T.tolist()
+        # print(np.shape(q_values))
+        # print(q_values[0])
+        fitModel = self.ddqn.fit(np.asarray(current_states).squeeze(), y={
+                                    "key_conv_net": np.asarray([q_value.tolist() for q_value in q_values[0]]).squeeze(),
+                                    "mouse_conv_net": np.asarray([q_value.tolist() for q_value in q_values[1]]).squeeze()},
+                                 batch_size=BatchSize, verbose=0)
+        # print(fitModel.history)
         loss = fitModel.history["loss"][0]
-        accuracy = fitModel.history["acc"][0]
-        return loss, accuracy, sum(max_q_values)/len(max_q_values)
+        accuracy = sum([int(fitModel.history["key_conv_net_accuracy"][0]), int(fitModel.history["mouse_conv_net_accuracy"][0])])/2
+        return loss, accuracy, sum(max_q_values.tolist())/len(max_q_values.tolist())
 
     def update_epsilon(self):
         self.epsilon -= ExplorationDecay
@@ -91,6 +104,8 @@ class ddqnTrainer(ddqnModel):
             return
         if totalStep % TrainingFrequency == 0:
             loss, accuracy, average_max_q = self.train()
+            self.save_csv(path="loss.csv", score=loss)
+            self.save_csv(path="accuracy.csv", score=accuracy)
             print(f"loss: {loss}, accuracy: {accuracy}, average_max_q: {average_max_q}")
         self.update_epsilon()
         if totalStep % ModelPersistenceUpdateFrequency == 0:
@@ -99,3 +114,12 @@ class ddqnTrainer(ddqnModel):
             self.reset_target()
             print('{{"metric": "epsilon", "value": {}}}'.format(self.epsilon))
             print('{{"metric": "total_step", "value": {}}}'.format(totalStep))
+
+    def save_csv(self, path, score):
+        if not os.path.exists(path):
+            with open(path, "w"):
+                pass
+        scores_file = open(path, "a")
+        with scores_file:
+            writer = csv.writer(scores_file)
+            writer.writerow([score])
