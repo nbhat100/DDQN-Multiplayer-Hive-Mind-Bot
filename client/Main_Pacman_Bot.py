@@ -4,12 +4,13 @@ from gather_training_points import readReward
 import pydirectinput
 from time import sleep
 import threading
+import random
 
 
-Frames = 4
+Frames = 5
 OutFrameSize = 80
 InFrameDim = (556, 838, 449, 786)
-InputShape = (Frames, InFrameDim[1]-InFrameDim[0], InFrameDim[3] - InFrameDim[2])
+InputShape = (80, 80, Frames)
 TotalStepLimit = 5000000
 ActionSpace = ("w", "a", "s", "d", "enter", "e")
 MouseActionSpace = [[1061, 581], [1053, 619], [1031, 651], [999, 673], [961, 681], [922, 673], [890, 651], [868, 619], [861, 581], [868, 542], [890, 510], [922, 488], [961, 481], [999, 488], [1031, 510], [1053, 542]]
@@ -38,6 +39,8 @@ class Environment:
     def step(self, action, prev_action):
         print(f"action: {action}")
         print(f"Mouse Action: {MouseActionSpace[action[1]]}")
+        upgrade = random.randrange(1, 9)
+        pydirectinput.press(str(upgrade))
         pydirectinput.keyUp(ActionSpace[prev_action[0]])
         pydirectinput.keyDown(ActionSpace[action[0]])
         pydirectinput.moveTo(MouseActionSpace[action[1]][0], MouseActionSpace[action[1]][1])
