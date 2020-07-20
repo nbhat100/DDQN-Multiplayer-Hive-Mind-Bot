@@ -7,13 +7,12 @@ from struct import *
 import zlib
 
 class Client:
-    def __init__(self, host="", port=8080):
+    def __init__(self, host="", port=65432):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
 
     def send_image_array(self, img):
         data = zlib.compress(img.tobytes())
-        print(len(data))
         self.sock.sendall(pack('>Q', len(data)))
         self.sock.sendall(data)
         self.sock.recv(1)

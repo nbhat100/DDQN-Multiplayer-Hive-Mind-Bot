@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import numpy as np
 from model import *
 import socket
 from threading import *
@@ -9,14 +8,15 @@ from struct import *
 from io import BytesIO
 import zlib
 import sys
+import numpy as np
 
 class Server:
-    def __init__(self, host="", port=8080, input_shape=(1920, 1080, 3), learning_rate=0.01):
+    def __init__(self, host="", port=65432, input_shape=(1920, 1080, 3), learning_rate=0.01):
         self.host = host
         self.port = port
-
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        self.buff = np.array([])
         self.input_shape = input_shape
         self.model = createModel(input_shape)
         self.model = CustomModel(self.model.inputs, self.model.outputs)
@@ -27,22 +27,26 @@ class Server:
         try:
             while True:
                 length = unpack('>Q', conn.recv(8))[0]
-                print(length)
                 data = b''
                 while len(data) < length:
                     to_read = length - len(data)
                     data += conn.recv(min(to_read, 4096))
-                    print(len(data))
 
                 data = zlib.decompress(data)
                 data = np.frombuffer(data)
                 data = data.reshape(self.input_shape)
+                self.buff = np.append(self.buff, data).reshape(np.append(-1, self.input_shape))
+                print(self.buff.shape)
 
                 assert len(b'\00') == 1
                 conn.send(b'\00')
+        except BrokenPipeError as e:
+            self.sock.sendall(b'\01')
+            print("Server shut down by user")
+            sys.exit()
         except Exception as e:
             print(e)
-            self.sock.shutdown(socket.SHUT_RDWR)
+            self.sock.close()
         finally:
             conn.close()
 
@@ -56,12 +60,12 @@ class Server:
                 thread = Thread(target=self.handle_image, args=(conn,))
                 thread.start()
                 print(threading.active_count())
+                if self.buff.shape[0] >= 3:
+                    self.sock.sendall(self.model.predict(self.buff))
         except KeyboardInterrupt as e:
             self.sock.sendall(b'\01')
             print("Server shut down by user")
-            sys.exit()
-        except OSError as e:
-            print("Error in image handling, server shutting down")
+            self.sock.close()
             sys.exit()
         finally:
             self.sock.close()
