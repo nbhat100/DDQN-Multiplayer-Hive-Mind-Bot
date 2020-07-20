@@ -1,34 +1,71 @@
 #!/usr/bin/python
 
+import numpy as np
+from model import *
 import socket
-from _thread import *
+from threading import *
 import threading
+from struct import *
+from io import BytesIO
+import zlib
+import sys
 
-host = ""
-port = 8080
-serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serv.bind((host, port))
-serv.listen(5)
+class Server:
+    def __init__(self, host="", port=8080, input_shape=(1920, 1080, 3), learning_rate=0.01):
+        self.host = host
+        self.port = port
 
-lock = threading.Lock()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def receive(conn):
-    while True:
-        data = conn.recv(1024)
-        if not data:
-            print("Terminated Connection")
-            lock.release()
-            break
+        self.input_shape = input_shape
+        self.model = createModel(input_shape)
+        self.model = CustomModel(self.model.inputs, self.model.outputs)
+        adam = Adam(lr=learning_rate)
+        self.model.compile(optimizer=adam)
 
-        data = data.decode('ascii')
-        conn.send(data[::-1].encode('ascii'))
+    def handle_image(self, conn):
+        try:
+            while True:
+                length = unpack('>Q', conn.recv(8))[0]
+                print(length)
+                data = b''
+                while len(data) < length:
+                    to_read = length - len(data)
+                    data += conn.recv(min(to_read, 4096))
+                    print(len(data))
 
-    conn.close()
+                data = zlib.decompress(data)
+                data = np.frombuffer(data)
+                data = data.reshape(self.input_shape)
 
-while True:
-    conn, addr = serv.accept()
+                assert len(b'\00') == 1
+                conn.send(b'\00')
+        except Exception as e:
+            print(e)
+            self.sock.shutdown(socket.SHUT_RDWR)
+        finally:
+            conn.close()
 
-    lock.acquire()
-    print("Received connection from " + addr[0])
-    
-    start_new_thread(receive, (conn,))
+    def start(self):
+        try:
+            self.sock.bind((self.host, self.port))
+            self.sock.listen(5)
+            while True:
+                conn, addr = self.sock.accept()
+
+                thread = Thread(target=self.handle_image, args=(conn,))
+                thread.start()
+                print(threading.active_count())
+        except KeyboardInterrupt as e:
+            self.sock.sendall(b'\01')
+            print("Server shut down by user")
+            sys.exit()
+        except OSError as e:
+            print("Error in image handling, server shutting down")
+            sys.exit()
+        finally:
+            self.sock.close()
+
+if __name__ == '__main__':
+    server = Server()
+    server.start()
