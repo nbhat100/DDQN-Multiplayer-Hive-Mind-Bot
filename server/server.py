@@ -1,34 +1,75 @@
 #!/usr/bin/python
 
+from model import *
 import socket
-from _thread import *
+from threading import *
 import threading
+from struct import *
+from io import BytesIO
+import zlib
+import sys
+import numpy as np
 
-host = ""
-port = 8080
-serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serv.bind((host, port))
-serv.listen(5)
+class Server:
+    def __init__(self, host="", port=65432, input_shape=(1920, 1080, 3), learning_rate=0.01):
+        self.host = host
+        self.port = port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-lock = threading.Lock()
+        self.buff = np.array([])
+        self.input_shape = input_shape
+        self.model = createModel(input_shape)
+        self.model = CustomModel(self.model.inputs, self.model.outputs)
+        adam = Adam(lr=learning_rate)
+        self.model.compile(optimizer=adam)
 
-def receive(conn):
-    while True:
-        data = conn.recv(1024)
-        if not data:
-            print("Terminated Connection")
-            lock.release()
-            break
+    def handle_image(self, conn):
+        try:
+            while True:
+                length = unpack('>Q', conn.recv(8))[0]
+                data = b''
+                while len(data) < length:
+                    to_read = length - len(data)
+                    data += conn.recv(min(to_read, 4096))
 
-        data = data.decode('ascii')
-        conn.send(data[::-1].encode('ascii'))
+                data = zlib.decompress(data)
+                data = np.frombuffer(data)
+                data = data.reshape(self.input_shape)
+                self.buff = np.append(self.buff, data).reshape(np.append(-1, self.input_shape))
+                print(self.buff.shape)
 
-    conn.close()
+                assert len(b'\00') == 1
+                conn.send(b'\00')
+        except BrokenPipeError as e:
+            self.sock.sendall(b'\01')
+            print("Server shut down by user")
+            sys.exit()
+        except Exception as e:
+            print(e)
+            self.sock.close()
+        finally:
+            conn.close()
 
-while True:
-    conn, addr = serv.accept()
+    def start(self):
+        try:
+            self.sock.bind((self.host, self.port))
+            self.sock.listen(5)
+            while True:
+                conn, addr = self.sock.accept()
 
-    lock.acquire()
-    print("Received connection from " + addr[0])
-    
-    start_new_thread(receive, (conn,))
+                thread = Thread(target=self.handle_image, args=(conn,))
+                thread.start()
+                print(threading.active_count())
+                if self.buff.shape[0] >= 3:
+                    self.sock.sendall(self.model.predict(self.buff))
+        except KeyboardInterrupt as e:
+            self.sock.sendall(b'\01')
+            print("Server shut down by user")
+            self.sock.close()
+            sys.exit()
+        finally:
+            self.sock.close()
+
+if __name__ == '__main__':
+    server = Server()
+    server.start()
