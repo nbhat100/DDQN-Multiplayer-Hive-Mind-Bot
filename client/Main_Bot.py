@@ -8,19 +8,18 @@ import random
 
 
 Frames = 5
-OutFrameSize = 80
-InFrameDim = (556, 838, 449, 786)
-InputShape = (80, 80, Frames)
+InFrameDim = (128, 1031, 0, 1920)
+InputShape = (270, 480, Frames)
 TotalStepLimit = 5000000
 ActionSpace = ("w", "a", "s", "d", "enter", "e")
 MouseActionSpace = [[1061, 581], [1053, 619], [1031, 651], [999, 673], [961, 681], [922, 673], [890, 651], [868, 619], [861, 581], [868, 542], [890, 510], [922, 488], [961, 481], [999, 488], [1031, 510], [1053, 542]]
-ScoreInDim = (905, 921, 875, 1045)
+ScoreInDim = (1014, 1029, 875, 1045)
 ScoreOutDim = (170, 16)
 
 
 class Environment:
     def __init__(self):
-        self.env = GetEnv(inDim=InFrameDim, outDim=(OutFrameSize, OutFrameSize))
+        self.env = GetEnv(inDim=InFrameDim, outDim=(InputShape[1], InputShape[0]))
         self.out = []
         for i in range(5):
             self.out.append(self.env.takeImage(4, "None"))
@@ -67,7 +66,7 @@ def main():
             env.step(action, prev_action)
             prev_action = action
             next_state = env.getEnvironment()
-            current_score = score.mainLoop((965, 982, 895, 1025), (130, 17))
+            current_score = score.mainLoop((1013, 1031, 895, 1025), (130, 17))
             reward = current_score - prev_score
             print(f"current_score: {current_score}")
             prev_score = current_score
