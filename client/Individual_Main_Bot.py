@@ -1,3 +1,4 @@
+#Run this instead of Client if bot is playing individually without server. 
 from DDQN_Model import ddqnTrainer
 from get_environment import GetEnv
 from gather_training_points import readReward
