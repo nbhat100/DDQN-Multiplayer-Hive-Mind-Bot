@@ -34,7 +34,8 @@ class ddqnModel:
 
 class ddqnTrainer(ddqnModel):
     def __init__(self, input_shape, action_space):
-        ddqnModel.__init__(self, input_shape, action_space, './')
+
+        ddqnModel.__init__(self, input_shape, action_space, './model')
         self.ddqn_target = ConvNet(self.input_shape, action_space).model
         self.reset_target()
         self.epsilon = ExplorationMax
