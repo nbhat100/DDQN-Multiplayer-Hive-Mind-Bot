@@ -20,7 +20,7 @@ class GetEnv:
                                      cv2.COLOR_RGB2GRAY)
                 dim = self.outDim
                 inDim = self.inDim
-                # print(inDim[0], inDim[1], inDim[2], inDim[3])
+                # print(inDim[0], ainDim[1], inDim[2], inDim[3])
                 img = cv2.resize(image[inDim[0]:inDim[1], inDim[2]:inDim[3]], dim, interpolation=cv2.INTER_AREA)
                 if processing == "inverse":
                     img = cv2.bitwise_not(img)
