@@ -52,19 +52,20 @@ class Environment:
         pydirectinput.moveTo(MouseActionSpace[action[1]][0], MouseActionSpace[action[1]][1])
 
 class Client:
-    def __init__(self, host="", port=15187):
+    def __init__(self, host="", port=15187, ident=0):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
+        self.id = ident
 
     def send_image_array(self, cur_state, nxt_state):
         data = zlib.compress(np.array([cur_state, nxt_state]).tobytes())
         self.sock.sendall(pack('>Q', len(data)))
         self.sock.sendall(data)
         self.sock.recv(1)
-        return unpack('>Q', self.sock.recv(8))
 
     def send_string(self, string):
         self.sock.sendall(string)
+
     def main(self):
         run = 0
         total_step = 0
@@ -81,14 +82,22 @@ class Client:
                 total_step += 1
                 step += 1
                 print(f"Step: {total_step}")
-                action = #Recieve action from Server Please do this DHruv
+
+                self.send_image_array(current_state, next_state)
+                self.send_string(reward)
+
+                length = unpack('>Q', conn.recv(8))[0]
+                data = b''
+                while len(data) < length:
+                    to_read = length - len(data)
+                    data += conn.recv(min(to_read, 4096))
+                action = np.frombuffer(data)[self.id]
+
                 env.step(action, prev_action)
                 prev_action = action
                 next_state = env.getEnvironment()
                 current_score = score.mainLoop((965, 982, 895, 1025), (130, 17))
                 reward = current_score - prev_score
-                self.send_image_array(current_state, next_state)
-                self.send_string(reward)
 
 client = Client(host="2.tcp.ngrok.io")
 client.main()
