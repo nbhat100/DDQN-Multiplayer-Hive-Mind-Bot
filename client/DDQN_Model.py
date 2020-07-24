@@ -1,4 +1,5 @@
-from convolutional_neural_net import ConvNet
+#Individual DDQN
+from Individual_convolutional_neural_net import ConvNet
 import os
 import random
 import numpy as np
