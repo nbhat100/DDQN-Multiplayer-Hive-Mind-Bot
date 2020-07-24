@@ -1,3 +1,4 @@
+#Use this file if you are doing an individual bot. I.e. without server, just running Main_bot without clients and servers. 
 from tensorflow.keras import layers, models, optimizers
 
 
