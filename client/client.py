@@ -65,9 +65,8 @@ class Client:
         self.sock.sendall(data)
         self.sock.recv(1)
 
-    def send_string(self, string):
-        string = str(string)
-        self.sock.send(bytes(string, 'utf8'))
+    def send_int(self, num):
+        self.sock.sendall(pack('>Q', num))
 
     def main(self):
         run = 0
