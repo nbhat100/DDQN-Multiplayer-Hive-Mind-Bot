@@ -14,19 +14,19 @@ import random
 
 
 Frames = 5
-OutFrameSize = 80
-InFrameDim = (556, 838, 449, 786)
-InputShape = (80, 80, Frames)
+InFrameDim = (128, 1031, 0, 1920)
+InputShape = (270, 480, Frames)
 TotalStepLimit = 5000000
 ActionSpace = ("w", "a", "s", "d", "enter", "e")
 MouseActionSpace = [[1061, 581], [1053, 619], [1031, 651], [999, 673], [961, 681], [922, 673], [890, 651], [868, 619], [861, 581], [868, 542], [890, 510], [922, 488], [961, 481], [999, 488], [1031, 510], [1053, 542]]
-ScoreInDim = (905, 921, 875, 1045)
+ScoreInDim = (1014, 1029, 875, 1045)
 ScoreOutDim = (170, 16)
+
 
 
 class Environment:
     def __init__(self):
-        self.env = GetEnv(inDim=InFrameDim, outDim=(OutFrameSize, OutFrameSize))
+        self.env = GetEnv(inDim=InFrameDim, outDim=(InputShape[1], InputShape[0]))
         self.out = []
         for i in range(5):
             self.out.append(self.env.takeImage(4, "None"))
@@ -57,14 +57,17 @@ class Client:
         self.sock.connect((host, port))
         self.id = ident
 
-    def send_image_array(self, cur_state, nxt_state):
-        data = zlib.compress(np.array([cur_state, nxt_state]).tobytes())
+    def send_image_array(self, cur_state):
+        data = zlib.compress(np.array(cur_state).tobytes())
+        print(cur_state.dtype)
+        print(len(data))
         self.sock.sendall(pack('>Q', len(data)))
         self.sock.sendall(data)
         self.sock.recv(1)
 
     def send_string(self, string):
-        self.sock.sendall(string)
+        string = str(string)
+        self.sock.send(bytes(string, 'utf8'))
 
     def main(self):
         run = 0
@@ -82,22 +85,27 @@ class Client:
                 total_step += 1
                 step += 1
                 print(f"Step: {total_step}")
+                print(np.array(current_state).shape)
+                print(np.array(current_state).size)
+                print(np.array(current_state).ravel())
+                self.send_image_array(np.array(current_state))
 
-                self.send_image_array(current_state, next_state)
-                self.send_string(reward)
-
-                length = unpack('>Q', conn.recv(8))[0]
+                length = unpack('>Q', self.sock.recv(8))[0]
                 data = b''
                 while len(data) < length:
                     to_read = length - len(data)
-                    data += conn.recv(min(to_read, 4096))
-                action = np.frombuffer(data)[self.id]
-
+                    data += self.sock.recv(min(to_read, 4096))
+                action = np.frombuffer(data, dtype="int64")
+                action = action[:6]
+                print(action)
+                action = action.reshape(3, 2)
+                action = action[self.id]
                 env.step(action, prev_action)
                 prev_action = action
-                next_state = env.getEnvironment()
                 current_score = score.mainLoop((965, 982, 895, 1025), (130, 17))
                 reward = current_score - prev_score
+                self.send_string(reward)
 
-client = Client(host="2.tcp.ngrok.io")
+
+client = Client(host="2.tcp.ngrok.io", port=12749, ident=0)
 client.main()
