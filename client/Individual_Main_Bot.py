@@ -1,16 +1,16 @@
-#Run this instead of Client if bot is playing individually without server. 
 from DDQN_Model import ddqnTrainer
 from get_environment import GetEnv
 from gather_training_points import readReward
 import pydirectinput
 from time import sleep
-import threading
+from threading import *
 import random
+import numpy as np
 
 
 Frames = 5
 InFrameDim = (128, 1031, 0, 1920)
-InputShape = (270, 480, Frames)
+InputShape = (Frames, 270, 480, 3)
 TotalStepLimit = 5000000
 ActionSpace = ("w", "a", "s", "d", "enter", "e")
 MouseActionSpace = [[1061, 581], [1053, 619], [1031, 651], [999, 673], [961, 681], [922, 673], [890, 651], [868, 619], [861, 581], [868, 542], [890, 510], [922, 488], [961, 481], [999, 488], [1031, 510], [1053, 542]]
@@ -20,11 +20,11 @@ ScoreOutDim = (170, 16)
 
 class Environment:
     def __init__(self):
-        self.env = GetEnv(inDim=InFrameDim, outDim=(InputShape[1], InputShape[0]))
+        self.env = GetEnv(inDim=InFrameDim, outDim=(InputShape[2], InputShape[1]))
         self.out = []
         for i in range(5):
             self.out.append(self.env.takeImage(4, "None"))
-        thread = threading.Thread(target=self.run, args=())
+        thread = Thread(target=self.run, args=())
         thread.daemon = True
         thread.start()
 
@@ -67,12 +67,15 @@ def main():
             env.step(action, prev_action)
             prev_action = action
             next_state = env.getEnvironment()
+            print(np.array(next_state).shape)
             current_score = score.mainLoop((1013, 1031, 895, 1025), (130, 17))
             reward = current_score - prev_score
             print(f"current_score: {current_score}")
             prev_score = current_score
             game_model.remember(current_state, action, reward, next_state)
-            game_model.step_update(total_step)
+            thread = Thread(target=game_model.step_update, args=(total_step,))
+            thread.start()
+            current_state = next_state
 
 
 main()
