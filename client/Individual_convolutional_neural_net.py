@@ -1,14 +1,14 @@
-#Use this file if you are doing an individual bot. I.e. without server, just running Main_bot without clients and servers. 
 from tensorflow.keras import layers, models, optimizers
 
 
 class ConvNet:
     def __init__(self, input_shape, action_space):
         conv_input = layers.Input(shape=input_shape)
-        x = layers.Conv2D(32, 8, strides=(4, 4), padding="valid", activation="relu", input_shape=input_shape)(conv_input)
-        x = layers.Conv2D(64, 4, strides=(2, 2), padding="valid", activation="relu", input_shape=input_shape)(x)
-        x = layers.Conv2D(64, 3, strides=(1, 1), padding="valid", activation="relu", input_shape=input_shape)(x)
-        x = layers.Flatten()(x)
+        x = layers.TimeDistributed(layers.Conv2D(32, 8, strides=(4, 4), padding="valid", activation="relu", input_shape=input_shape))(conv_input)
+        x = layers.TimeDistributed(layers.Conv2D(64, 4, strides=(2, 2), padding="valid", activation="relu", input_shape=input_shape))(x)
+        x = layers.TimeDistributed(layers.Conv2D(64, 3, strides=(1, 1), padding="valid", activation="relu", input_shape=input_shape))(x)
+        x = layers.TimeDistributed(layers.Flatten())(x)
+        x = layers.LSTM(128)(x)
         x = layers.Dense(512, activation="relu")(x)
         key_conv_output = layers.Dense(action_space[0])(x)
         mouse_conv_output = layers.Dense(action_space[1])(x)
