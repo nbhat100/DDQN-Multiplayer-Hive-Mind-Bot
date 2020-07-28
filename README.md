@@ -8,3 +8,5 @@ Current status: working on making it play Diep.io
 * **Main_Bot.py** intergrates everything together  
 
 ***Note:*** *Everything complete, just need to test. May add an Adversial Inverse Reinforcement Learning algorithm* 
+
+https://colab.research.google.com/drive/1HShBe_qfRYvRIBe9ff8NrtXhzsCuI-Eo?usp=sharing
