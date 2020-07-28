@@ -6,13 +6,13 @@ import numpy as np
 import csv
 
 # Hyper Parameters
-StartingReplaySize = 500
-ExplorationMax = 1
+StartingReplaySize = 0
+ExplorationMax = 0
 MemorySize = 900000
 TrainingFrequency = 4
-BatchSize = 32
+BatchSize = 4
 Gamma = 0.99
-ExplorationMin = 0.1
+ExplorationMin = 0
 ExplorationSteps = 8500
 ExplorationDecay = (ExplorationMax - ExplorationMin)/ExplorationSteps
 ModelPersistenceUpdateFrequency = 10
