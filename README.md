@@ -1,4 +1,4 @@
-# DDQN Hive Mind Bot
+# DDQN Multiplayer Bot
 Goal: plays multiplayer games with alts to efficiently clear enemies
 Current status: working on making it play Diep.io
 **Architecture:**  
